@@ -8,15 +8,25 @@ dotenv.config();
 
 // Conexión a MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("🚀 Conectado a MongoDB Atlas"))
   .catch((err) => console.error("💥 Error de MongoDB:", err));
 
 const app = express();
 const PORT = 3001;
+
+// Agrega esto ANTES de tus otros endpoints en server-minimal.js
+app.get("/", (req, res) => {
+  res.json({
+    message: "API del Ciclo Menstrual",
+    version: "1.0.0",
+    endpoints: {
+      cycles: "/api/cycles",
+      stats: "/api/stats",
+      predictions: "/api/predictions",
+    },
+  });
+});
 
 // Middleware CORS mejorado
 app.use((req, res, next) => {
@@ -51,7 +61,7 @@ const cycleSchema = new mongoose.Schema(
     fertileWindowEnd: Date,
     nextPeriodPrediction: Date,
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const Cycle = mongoose.model("Cycle", cycleSchema);
@@ -74,7 +84,7 @@ app.get("/api/predictions", async (req, res) => {
     for (let i = 1; i < cycles.length; i++) {
       const diff = moment(cycles[i].startDate).diff(
         moment(cycles[i - 1].startDate),
-        "days",
+        "days"
       );
       cycleLengths.push(diff);
     }
@@ -146,7 +156,7 @@ app.get("/api/stats", async (req, res) => {
 
     for (let i = 1; i < startDates.length; i++) {
       const diff = Math.abs(
-        moment(startDates[i]).diff(moment(startDates[i - 1]), "days"),
+        moment(startDates[i]).diff(moment(startDates[i - 1]), "days")
       );
       cycleLengths.push(diff);
     }
