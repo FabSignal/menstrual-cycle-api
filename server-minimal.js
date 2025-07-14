@@ -23,7 +23,6 @@ mongoose
 const app = express();
 const PORT = 3001;
 
-// Agrega esto ANTES de tus otros endpoints en server-minimal.js
 app.get("/", (req, res) => {
   res.json({
     message: "API del Ciclo Menstrual",
@@ -158,42 +157,6 @@ app.get("/api/stats", async (req, res) => {
       });
     }
 
-    // Endpoint POST /api/predictions
-    app.post("/api/predictions", (req, res) => {
-      try {
-        const userCycles = req.body.ciclos; // el array que envía el frontend
-        if (!Array.isArray(userCycles) || userCycles.length < 1) {
-          return res
-            .status(400)
-            .json({ error: "Se requiere un array de ciclos" });
-        }
-
-        // Tomamos el último ciclo para calcular con sus datos:
-        const last = userCycles[userCycles.length - 1];
-        const startDate = new Date(last.fecha);
-        const cycleLength = Number(last.duracion);
-        const periodLength = Number(last.sintomas ? last.sintomas.length : 0);
-        // (usa aquí tu lógica para periodLength o pásalo explícitamente)
-
-        // Ahora generamos las predicciones:
-        const predictions = {
-          nextPeriod: getNextPeriod(startDate, cycleLength),
-          ovulationStatus: getOvulationStatus(startDate, cycleLength),
-          pregnancyChance: getPregnancyChance(startDate, cycleLength),
-          daysToPeriod: getDaysBeforePeriod(startDate, cycleLength),
-          phase: getPhase(startDate, cycleLength, periodLength),
-        };
-
-        return res.json(predictions);
-      } catch (error) {
-        console.error("Error generating predictions:", error);
-        return res.status(500).json({
-          error: "Error generating predictions",
-          details: error.message,
-        });
-      }
-    });
-
     const durations = cycles.map((c) => c.duration);
     const startDates = cycles.map((c) => c.startDate);
     const cycleLengths = [];
@@ -254,6 +217,40 @@ app.post("/api/cycles", async (req, res) => {
     console.error("Error al guardar ciclo:", error);
     res.status(400).json({
       error: "Error al guardar ciclo",
+      details: error.message,
+    });
+  }
+});
+
+// Endpoint POST /api/predictions
+app.post("/api/predictions", (req, res) => {
+  try {
+    const userCycles = req.body.ciclos; // el array que envía el frontend
+    if (!Array.isArray(userCycles) || userCycles.length < 1) {
+      return res.status(400).json({ error: "Se requiere un array de ciclos" });
+    }
+
+    // Tomamos el último ciclo para calcular con sus datos:
+    const last = userCycles[userCycles.length - 1];
+    const startDate = new Date(last.fecha);
+    const cycleLength = Number(last.duracion);
+    const periodLength = last.duracion || 5; // Usa la duración real si está disponible
+    // (usa aquí tu lógica para periodLength o pásalo explícitamente)
+
+    // Ahora generamos las predicciones:
+    const predictions = {
+      nextPeriod: getNextPeriod(startDate, cycleLength),
+      ovulationStatus: getOvulationStatus(startDate, cycleLength),
+      pregnancyChance: getPregnancyChance(startDate, cycleLength),
+      daysToPeriod: getDaysBeforePeriod(startDate, cycleLength),
+      phase: getPhase(startDate, cycleLength, periodLength),
+    };
+
+    return res.json(predictions);
+  } catch (error) {
+    console.error("Error generating predictions:", error);
+    return res.status(500).json({
+      error: "Error generating predictions",
       details: error.message,
     });
   }

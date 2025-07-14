@@ -1,20 +1,27 @@
 // predictions.js - Versión optimizada
-const moment = require("moment");
+import moment from "moment";
+
+// Helper: suma días a una fecha
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
 
 // 1. Fecha estimada de inicio del próximo período
-function getNextPeriod(startDate, cycleLength) {
+export function getNextPeriod(startDate, cycleLength) {
   return moment(startDate).add(cycleLength, "days").format("YYYY-MM-DD");
 }
 
 // 2. Día actual del ciclo
-function getCurrentDay(startDate) {
+export function getCurrentDay(startDate) {
   const today = moment();
   const start = moment(startDate);
   return today.diff(start, "days") + 1;
 }
 
 // 3. Estado de ovulación
-function getOvulationStatus(startDate, cycleLength) {
+export function getOvulationStatus(startDate, cycleLength) {
   const currentDay = getCurrentDay(startDate);
   const daysToOvulation = 14 - (currentDay % cycleLength);
 
@@ -25,7 +32,7 @@ function getOvulationStatus(startDate, cycleLength) {
 }
 
 // 4. Probabilidad de embarazo
-function getPregnancyChance(startDate, cycleLength) {
+export function getPregnancyChance(startDate, cycleLength) {
   const currentDay = getCurrentDay(startDate);
   const fertileWindowStart = cycleLength - 18;
   const fertileWindowEnd = cycleLength - 11;
@@ -37,7 +44,7 @@ function getPregnancyChance(startDate, cycleLength) {
 }
 
 // 5. Días antes del período
-function getDaysBeforePeriod(startDate, cycleLength) {
+export function getDaysBeforePeriod(startDate, cycleLength) {
   const currentDay = getCurrentDay(startDate);
   const daysRemaining = cycleLength - currentDay;
 
@@ -47,7 +54,7 @@ function getDaysBeforePeriod(startDate, cycleLength) {
 }
 
 // 6. Fase del ciclo
-function getPhase(startDate, cycleLength) {
+export function getPhase(startDate, cycleLength) {
   const currentDay = getCurrentDay(startDate);
 
   if (currentDay <= 5) return "Menstruation";
@@ -57,7 +64,7 @@ function getPhase(startDate, cycleLength) {
 }
 
 // Función principal para generar predicciones
-function generatePredictions(cycles) {
+export function generatePredictions(cycles) {
   if (cycles.length < 3) {
     return { status: "insufficient_data" };
   }
@@ -83,5 +90,3 @@ function generatePredictions(cycles) {
     },
   };
 }
-
-module.exports = { generatePredictions };
