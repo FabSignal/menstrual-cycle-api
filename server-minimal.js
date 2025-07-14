@@ -1,5 +1,6 @@
 // server-minimal.js
 import express from "express";
+import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import moment from "moment";
@@ -23,6 +24,28 @@ mongoose
 const app = express();
 const PORT = 3001;
 
+// Configuración CORS
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions)); // Usa el paquete cors
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
+
+// Manejar preflight requests
+app.options("*", cors(corsOptions));
+
 app.get("/", (req, res) => {
   res.json({
     message: "API del Ciclo Menstrual",
@@ -33,6 +56,15 @@ app.get("/", (req, res) => {
       predictions: "/api/predictions",
     },
   });
+});
+
+// En server-minimal.js, antes de las rutas
+app.use((req, res, next) => {
+  if (req.header("x-forwarded-proto") !== "https") {
+    res.redirect(`https://${req.header("host")}${req.url}`);
+  } else {
+    next();
+  }
 });
 
 // Middleware CORS mejorado
