@@ -28,23 +28,22 @@ const PORT = 3001;
 const corsOptions = {
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type"],
   credentials: true,
-  optionsSuccessStatus: 200,
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions)); // Usa el paquete cors
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  next();
-});
-
-// Manejar preflight requests
-app.options("*", cors(corsOptions));
+// Redirección HTTPS solo en producción
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    if (req.headers["x-forwarded-proto"] !== "https") {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
 
 app.get("/", (req, res) => {
   res.json({
@@ -56,30 +55,6 @@ app.get("/", (req, res) => {
       predictions: "/api/predictions",
     },
   });
-});
-
-// En server-minimal.js, antes de las rutas
-app.use((req, res, next) => {
-  if (req.header("x-forwarded-proto") !== "https") {
-    res.redirect(`https://${req.header("host")}${req.url}`);
-  } else {
-    next();
-  }
-});
-
-// Middleware CORS mejorado
-app.use((req, res, next) => {
-  // Configuración esencial de CORS
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-
-  // Manejo especial para solicitudes OPTIONS
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
 });
 
 app.use(express.json()); // Parsear JSON
