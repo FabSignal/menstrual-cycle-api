@@ -3,6 +3,14 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import moment from "moment";
+import {
+  getNextPeriod,
+  getCurrentDay,
+  getOvulationStatus,
+  getPregnancyChance,
+  getDaysBeforePeriod,
+  getPhase,
+} from "./src/predictions.js";
 
 dotenv.config();
 
@@ -149,6 +157,42 @@ app.get("/api/stats", async (req, res) => {
         averageCycleLength: null,
       });
     }
+
+    // Endpoint POST /api/predictions
+    app.post("/api/predictions", (req, res) => {
+      try {
+        const userCycles = req.body.ciclos; // el array que envía el frontend
+        if (!Array.isArray(userCycles) || userCycles.length < 1) {
+          return res
+            .status(400)
+            .json({ error: "Se requiere un array de ciclos" });
+        }
+
+        // Tomamos el último ciclo para calcular con sus datos:
+        const last = userCycles[userCycles.length - 1];
+        const startDate = new Date(last.fecha);
+        const cycleLength = Number(last.duracion);
+        const periodLength = Number(last.sintomas ? last.sintomas.length : 0);
+        // (usa aquí tu lógica para periodLength o pásalo explícitamente)
+
+        // Ahora generamos las predicciones:
+        const predictions = {
+          nextPeriod: getNextPeriod(startDate, cycleLength),
+          ovulationStatus: getOvulationStatus(startDate, cycleLength),
+          pregnancyChance: getPregnancyChance(startDate, cycleLength),
+          daysToPeriod: getDaysBeforePeriod(startDate, cycleLength),
+          phase: getPhase(startDate, cycleLength, periodLength),
+        };
+
+        return res.json(predictions);
+      } catch (error) {
+        console.error("Error generating predictions:", error);
+        return res.status(500).json({
+          error: "Error generating predictions",
+          details: error.message,
+        });
+      }
+    });
 
     const durations = cycles.map((c) => c.duration);
     const startDates = cycles.map((c) => c.startDate);
